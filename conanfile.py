@@ -7,12 +7,16 @@ class OpencvConan(ConanFile):
     version = "3.1.0"
     license = "MIT"
     url = "https://github.com/anishitani/conanio-opencv"
+     
     settings = "os", "compiler", "build_type", "arch"
+
     options = {
-        "shared": [True, False]
+        "shared": [True, False],
+        "concurrency": range(1,16)
     }
-    default_options = "shared=True"
-    generators = "cmake"
+    default_options = "shared=True","concurrency=1"
+
+    generators = "cmake", "qmake"
 
     def source(self):
         self.run("git clone --depth 1 https://github.com/opencv/opencv.git")
@@ -23,7 +27,7 @@ class OpencvConan(ConanFile):
         flags = "-DWITH_IPP=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOCS=OFF -DBUILD_TESTS=OFF -DBUILD_opencv_apps=OFF -DBUILD_PERF_TESTS=OFF"
         shared = "-DBUILD_SHARED_LIBS=ON" if self.options.shared else ""
         self.run('cmake opencv %s %s %s' % (cmake.command_line, shared, flags))
-        self.run("cmake --build . %s" % cmake.build_config)
+        self.run("cmake --build . %s -- -i -j %s " % (cmake.build_config,self.options.concurrency))
 
     def package(self):
         self.copy("*.h*", dst="include", src="opencv/include", keep_path=True)
